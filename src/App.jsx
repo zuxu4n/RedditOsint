@@ -14,7 +14,6 @@ function buildUrls(username, type, pagination = {}, dateFilters = {}) {
         `author=${encodeURIComponent(username)}`,
     ];
 
-    // Pagination cursors take priority over date filter boundaries
     if (pagination.before) {
         base.push(`before=${pagination.before}`);
     } else if (dateFilters.dateTo) {
@@ -355,7 +354,6 @@ function usePaginatedFetch(type) {
         }
     }, [type]);
 
-    // Called on new search or filter apply — resets pagination and stores filters
     const reset = useCallback(async (username, filters = {}) => {
         setPage(1);
         setPageStack([]);
@@ -410,7 +408,6 @@ export default function App() {
     const posts    = usePaginatedFetch("posts");
     const comments = usePaginatedFetch("comments");
 
-    // Convert date strings to epoch seconds for the APIs
     const buildFilters = useCallback(() => {
         const f = {};
         if (dateFrom) f.dateFrom = Math.floor(new Date(dateFrom).getTime() / 1000);
@@ -460,16 +457,16 @@ export default function App() {
                     <button onClick={() => { setSearched(false); setUsername(""); setQuery(""); setDateFrom(""); setDateTo(""); }}
                             className="group flex items-center gap-2">
                         <img src="/bot.png" alt="logo" className="w-10 h-10 rounded-full object-cover flex-shrink-0" />
-                        <span className="text-[22px] font-semibold tracking-tight text-white whitespace-nowrap max-w-0 overflow-hidden opacity-0 group-hover:max-w-xs group-hover:opacity-100 transition-all duration-300 ease-out">
+                        <span className="text-[22px] font-semibold tracking-tight text-white whitespace-nowrap max-w-0 overflow-hidden opacity-0 group-hover:max-w-xs group-hover:opacity-100 transition-all duration-700 ease-out">
               reddit<span className="text-[#ff4500]">OSINT</span>
             </span>
                         <span className="text-[11px] text-[#818384] border border-[#343536] rounded px-1.5 py-0.5 flex-shrink-0">beta</span>
                     </button>
                     <div className="flex-1 flex justify-end items-center gap-4">
                         <a href="/changelog.html" target="_blank" rel="noopener noreferrer"
-                           title="Changelog"
+                           title="Documentation"
                            className="text-[11px] text-[#818384] hover:text-[#d7dadc] border border-[#343536] hover:border-[#818384] rounded px-2.5 py-1 transition-colors">
-                            Changelog
+                            Documentation
                         </a>
                         <a href="https://github.com/zuxu4n/RedditOsint" target="_blank" rel="noopener noreferrer"
                            title="GitHub" className="text-[#818384] hover:text-white transition-colors">
