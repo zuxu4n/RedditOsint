@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 
 // ─── API Config ───────────────────────────────────────────────────────────────
 
@@ -168,6 +168,36 @@ const IconChevronLeft = () => (
 const IconChevronRight = () => (
     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+    </svg>
+);
+
+// ─── Anime Face SVG ───────────────────────────────────────────────────────────
+
+const AnimeFace = () => (
+    <svg className="anime-face-svg" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+        {/* Face circle */}
+        <circle cx="22" cy="22" r="19" fill="white" opacity="0.97"/>
+        {/* Left eye */}
+        <g className="face-eye-l">
+            <ellipse cx="15" cy="20" rx="4" ry="4.5" fill="#1a1a2e"/>
+            <ellipse cx="15" cy="20" rx="3" ry="3.5" fill="#3a3a6e"/>
+            <circle cx="16.5" cy="18.2" r="1.2" fill="white"/>
+            <circle cx="14"   cy="21.5" r="0.5" fill="white" opacity="0.6"/>
+        </g>
+        {/* Right eye */}
+        <g className="face-eye-r">
+            <ellipse cx="29" cy="20" rx="4" ry="4.5" fill="#1a1a2e"/>
+            <ellipse cx="29" cy="20" rx="3" ry="3.5" fill="#3a3a6e"/>
+            <circle cx="30.5" cy="18.2" r="1.2" fill="white"/>
+            <circle cx="28"   cy="21.5" r="0.5" fill="white" opacity="0.6"/>
+        </g>
+        {/* Blush marks */}
+        <ellipse className="face-blush" cx="10" cy="26" rx="4.5" ry="2.2" fill="#fe5301" opacity="0.45"/>
+        <ellipse className="face-blush" cx="34" cy="26" rx="4.5" ry="2.2" fill="#fe5301" opacity="0.45"/>
+        {/* Happy mouth */}
+        <path d="M17 28 Q22 33 27 28" stroke="#1a1a2e" strokeWidth="1.8" strokeLinecap="round" fill="none"/>
+        {/* Highlight */}
+        <ellipse cx="28" cy="12" rx="3" ry="1.5" fill="white" opacity="0.35" transform="rotate(-30 28 12)"/>
     </svg>
 );
 
@@ -415,10 +445,28 @@ export default function App() {
         return f;
     }, [dateFrom, dateTo]);
 
+    // On mount, check if a ?u= param is in the URL and auto-search it
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const u = params.get("u")?.trim();
+        if (!u) return;
+        setUsername(u);
+        setQuery(u);
+        setSearched(true);
+        setInitialLoading(true);
+        Promise.all([posts.reset(u, {}), comments.reset(u, {})]).then(() => {
+            setInitialLoading(false);
+        });
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
     const handleSubmit = useCallback(async (e) => {
         e.preventDefault();
         const user = username.trim();
         if (!user) return;
+        // Write username to URL so the link is shareable
+        const url = new URL(window.location.href);
+        url.searchParams.set("u", user);
+        window.history.pushState({}, "", url);
         setQuery(user);
         setSearched(true);
         setInitialLoading(true);
@@ -449,24 +497,82 @@ export default function App() {
 
     return (
         <div className="min-h-screen bg-[#0d0d0d] text-[#d7dadc]" style={{ fontFamily: "'Sora', sans-serif" }}>
-            <style>{`@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap');`}</style>
+            <style>{`
+                @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap');
+
+                @keyframes face-in {
+                    0%   { transform: translate(-50%, -50%) scale(0.1); opacity: 0; }
+                    20%  { opacity: 1; }
+                    65%  { transform: translate(-50%, -50%) scale(1.15); }
+                    80%  { transform: translate(-50%, -50%) scale(0.94); }
+                    100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+                }
+
+                @keyframes face-bob {
+                    0%,100% { transform: translate(-50%, -52%); }
+                    50%     { transform: translate(-50%, -48%); }
+                }
+
+                @keyframes blush-pulse {
+                    0%,100% { opacity: 0.55; }
+                    50%     { opacity: 0.85; }
+                }
+
+                @keyframes eye-blink {
+                    0%,90%,100% { transform: scaleY(1); }
+                    95%         { transform: scaleY(0.08); }
+                }
+
+                .anime-face-svg {
+                    width: 36px;
+                    height: 36px;
+                    display: block;
+                    opacity: 0;
+                    transform: translate(-50%, -50%) scale(0.1);
+                    pointer-events: none;
+                    position: absolute;
+                    left: 20px;
+                    top: 50%;
+                    z-index: 10;
+                    overflow: visible;
+                }
+
+                .logo-btn:hover .anime-face-svg {
+                    animation:
+                        face-in 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
+                        face-bob 2.2s ease-in-out 0.55s infinite;
+                }
+
+                .logo-btn:hover .face-blush {
+                    animation: blush-pulse 2s ease-in-out 0.55s infinite;
+                }
+
+                .logo-btn:hover .face-eye-l,
+                .logo-btn:hover .face-eye-r {
+                    transform-origin: center;
+                    animation: eye-blink 3.5s ease-in-out 1s infinite;
+                }
+            `}</style>
 
             {/* Header */}
             <header className="border-b border-[#1c1c1d] bg-[#0d0d0d] sticky top-0 z-20">
                 <div className="max-w-3xl mx-auto px-4 py-3 flex items-center gap-3">
-                    <button onClick={() => { setSearched(false); setUsername(""); setQuery(""); setDateFrom(""); setDateTo(""); }}
-                            className="group flex items-center gap-2">
+                    <button
+                        onClick={() => { setSearched(false); setUsername(""); setQuery(""); setDateFrom(""); setDateTo(""); window.history.pushState({}, "", "/"); }}
+                        className="logo-btn group flex items-center gap-2 relative"
+                    >
                         <img src="/bot.png" alt="logo" className="w-10 h-10 rounded-full object-cover flex-shrink-0" />
                         <span className="text-[22px] font-semibold tracking-tight text-white whitespace-nowrap max-w-0 overflow-hidden opacity-0 group-hover:max-w-xs group-hover:opacity-100 transition-all duration-700 ease-out">
-              reddit<span className="text-[#ff4500]">OSINT</span>
-            </span>
+                            reddit<span className="text-[#fe5301]">OSINT</span>
+                        </span>
                         <span className="text-[11px] text-[#818384] border border-[#343536] rounded px-1.5 py-0.5 flex-shrink-0">beta</span>
+                        <AnimeFace />
                     </button>
                     <div className="flex-1 flex justify-end items-center gap-4">
                         <a href="/changelog.html" target="_blank" rel="noopener noreferrer"
-                           title="Documentation"
+                           title="Docs"
                            className="text-[11px] text-[#818384] hover:text-[#d7dadc] border border-[#343536] hover:border-[#818384] rounded px-2.5 py-1 transition-colors">
-                            Documentation
+                            Docs
                         </a>
                         <a href="https://github.com/zuxu4n/RedditOsint" target="_blank" rel="noopener noreferrer"
                            title="GitHub" className="text-[#818384] hover:text-white transition-colors">
@@ -536,12 +642,12 @@ export default function App() {
                                             : "https://pullpush.io/";
                                         return (
                                             <span key={src}>
-                        {i > 0 && <span className="text-[#818384]"> + </span>}
+                                                {i > 0 && <span className="text-[#818384]"> + </span>}
                                                 <a href={url} target="_blank" rel="noopener noreferrer"
                                                    className="text-[#d7dadc] hover:text-white hover:underline transition-colors">
-                          {src}
-                        </a>
-                      </span>
+                                                    {src}
+                                                </a>
+                                            </span>
                                         );
                                     })}</>
                                 )}
@@ -586,8 +692,8 @@ export default function App() {
                                     <IconChevronLeft />
                                 </button>
                                 <span className="text-[11px] text-[#818384]">
-                  {active.loading ? <IconSpinner /> : `Page ${active.page}`}
-                </span>
+                                    {active.loading ? <IconSpinner /> : `Page ${active.page}`}
+                                </span>
                                 <button onClick={() => active.goNext(query)} disabled={active.items.length < LIMIT || active.loading}
                                         className="flex items-center justify-center w-7 h-7 rounded-sm border border-[#343536] hover:border-[#818384] text-[#d7dadc] transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
                                     <IconChevronRight />
